@@ -53,13 +53,22 @@ export function TicketDetailScreen({ ticketId, onBack }) {
     if (!apiKey.trim()) return
     const controller = new AbortController()
     abortControllerRef.current = controller
-
-    dispatch({ type: 'DRAFT_UPDATED', ticketId, text: '' })
     dispatch({ type: 'DRAFT_STREAMING_SET', ticketId, streaming: true })
 
+    // Keep the previous draft on screen until the first new chunk actually
+    // arrives, instead of clearing it upfront - a Stop click before any
+    // text comes back should not lose a draft that was already there.
+    let gotFirstChunk = false
     const result = await streamReplyDraft(ticket, ticket.triage, apiKey.trim(), {
       signal: controller.signal,
-      onChunk: (chunk) => dispatch({ type: 'DRAFT_APPENDED', ticketId, chunk }),
+      onChunk: (chunk) => {
+        if (gotFirstChunk) {
+          dispatch({ type: 'DRAFT_APPENDED', ticketId, chunk })
+        } else {
+          dispatch({ type: 'DRAFT_UPDATED', ticketId, text: chunk })
+          gotFirstChunk = true
+        }
+      },
     })
 
     dispatch({ type: 'DRAFT_STREAMING_SET', ticketId, streaming: false })
