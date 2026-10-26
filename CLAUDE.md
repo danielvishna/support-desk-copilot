@@ -51,6 +51,20 @@ Keep these as separate modules, not intermixed:
 Expect Hebrew/RTL content, malformed CSVs, conflicting urgency signals, very long messages, and
 instructions embedded inside customer messages. Handle all of it without crashing.
 
+## Documentation
+
+Follow the [Google JavaScript Style Guide](https://google.github.io/styleguide/jsguide.html#jsdoc)
+for JSDoc:
+- Every file starts with an `@fileoverview` block explaining its role and why it's a separate
+  module (ties back to the architecture rule above).
+- Every exported function/constant gets a JSDoc block: `@param {type} name description`,
+  `@return {type} description`, `@throws` when relevant. Use `@const {type}` for exported
+  constants whose type isn't obvious from the value.
+- Document the *why*/contract, not the obvious - skip JSDoc on trivial one-line helpers where the
+  signature says everything, and never restate what a line of code already makes clear.
+- Non-exported/internal helpers still get a short JSDoc block when their behavior isn't obvious
+  from the name alone (e.g. a retry helper's return shape).
+
 ## Process
 
 - Small, meaningful git commits — the history is reviewed.

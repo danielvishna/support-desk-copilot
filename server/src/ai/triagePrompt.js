@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Builds the triage prompt and the JSON schema Gemini must
+ * return. Kept separate from geminiClient.js so the prompt wording and the
+ * schema can be reviewed/changed without touching the SDK call itself.
+ */
+
+/** @const {string} */
 const SYSTEM_INSTRUCTION = `You are a support-ticket triage assistant for a customer support team.
 
 You will be given one ticket (customer name, subject, message). Decide:
@@ -17,6 +24,12 @@ Rules:
 - A feature request or preference ask is never High priority on its own.
 - reason must be a single concrete sentence grounded in the ticket text, not a generic phrase.`
 
+/**
+ * JSON schema Gemini is constrained to when triaging a ticket. See
+ * validation/triageResultSchema.js for the server-side check we still run
+ * against whatever comes back (CLAUDE.md: never trust a provider blindly).
+ * @const {Object}
+ */
 export const TRIAGE_RESPONSE_SCHEMA = {
   type: 'object',
   properties: {
@@ -31,6 +44,13 @@ export const TRIAGE_RESPONSE_SCHEMA = {
   propertyOrdering: ['priority', 'category', 'reason'],
 }
 
+/**
+ * Builds the Gemini `contents` + system instruction for triaging one
+ * ticket.
+ * @param {{customer: string, subject: string, message: string}} ticket A
+ *     ticket already validated by validation/ticketSchema.js.
+ * @return {{systemInstruction: string, contents: !Array<Object>}}
+ */
 export function buildTriagePrompt(ticket) {
   return {
     systemInstruction: SYSTEM_INSTRUCTION,

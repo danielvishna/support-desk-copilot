@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Express entry point for the Support Desk Copilot API. Wires
+ * up middleware and mounts feature routers; route logic itself lives under
+ * src/routes, AI calls under src/ai, and input validation under
+ * src/validation (see CLAUDE.md for the architecture rule this follows).
+ */
+
 import cors from 'cors'
 import 'dotenv/config'
 import express from 'express'

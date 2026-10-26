@@ -1,7 +1,15 @@
+/**
+ * @fileoverview Temporary deploy smoke-test screen: confirms
+ * client -> server -> Gemini works end to end against a hardcoded sample
+ * ticket. Will be replaced by the real import/triage/chat UI.
+ */
+
 import { useState } from 'react'
 
+/** @const {string} */
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+/** @const {{id: string, customer: string, subject: string, message: string}} */
 const SAMPLE_TICKET = {
   id: 'T-002',
   customer: 'Alex',
@@ -9,24 +17,31 @@ const SAMPLE_TICKET = {
   message: 'Our entire team cannot access the dashboard, and we have a customer demo in an hour.',
 }
 
-// Temporary deploy smoke-test screen: confirms client -> server -> Gemini
-// works end to end. Will be replaced by the real import/triage/chat UI.
 function App() {
   const [apiKey, setApiKey] = useState('')
   const [status, setStatus] = useState('idle') // idle | loading | success | error
   const [result, setResult] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [errorRetryable, setErrorRetryable] = useState(false)
 
+  /**
+   * Sends the sample ticket to POST /api/triage with the entered key and
+   * renders the result, or a classified error from the server.
+   * @param {!SubmitEvent} event
+   * @return {Promise<void>}
+   */
   async function handleSubmit(event) {
     event.preventDefault()
     if (!apiKey.trim()) {
       setStatus('error')
       setErrorMessage('Enter your Gemini API key first.')
+      setErrorRetryable(false)
       return
     }
 
     setStatus('loading')
     setErrorMessage('')
+    setErrorRetryable(false)
     setResult(null)
 
     try {
@@ -43,6 +58,7 @@ function App() {
       if (!response.ok) {
         setStatus('error')
         setErrorMessage(data.error || `Request failed (${response.status})`)
+        setErrorRetryable(Boolean(data.retryable))
         return
       }
 
@@ -51,6 +67,7 @@ function App() {
     } catch {
       setStatus('error')
       setErrorMessage('Could not reach the server. Is it running and is the API URL correct?')
+      setErrorRetryable(true)
     }
   }
 
@@ -90,9 +107,10 @@ function App() {
       </form>
 
       {status === 'error' && (
-        <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {errorMessage}
-        </p>
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p>{errorMessage}</p>
+          {errorRetryable && <p className="mt-1 text-xs text-red-600">Safe to try again now.</p>}
+        </div>
       )}
 
       {status === 'success' && result && (
