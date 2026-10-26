@@ -4,8 +4,12 @@ An AI assistant that helps support agents triage tickets and draft replies. A su
 uploads a CSV of customer tickets; the app assigns each a priority and category, then helps
 draft a response to a selected ticket.
 
-> Status: CSV import, AI triage, and the ticket list/detail screens work. Reply-draft generation
-> (streaming + Stop) is not built yet - the draft field is manually editable for now.
+> Status: CSV import, AI triage, the ticket list/detail screens, and streaming reply drafts with a
+> working Stop button are all built and deployed. See DECISIONS.md for what's intentionally out of
+> scope and known weaknesses.
+
+**Live:** [support-desk-copilot.vercel.app](https://support-desk-copilot.vercel.app) (frontend) ·
+[support-desk-copilot-server.onrender.com](https://support-desk-copilot-server.onrender.com) (API)
 
 ## Stack
 
@@ -46,9 +50,12 @@ T-001,Noa,Duplicate charge,"I was charged twice for the same subscription."
 2. Upload a tickets CSV. Every ticket starts triaging automatically, one at a time.
 3. The ticket list shows each ticket's priority, category, and review status, plus how many of
    the imported tickets have been reviewed.
-4. Open a ticket to see the original message alongside the AI's priority/category/reasoning, edit
-   a reply draft, and mark it reviewed. If triage failed or wasn't run yet, retry it from here.
-5. **Import new CSV** replaces the current ticket set entirely - it does not merge with a
+4. Open a ticket to see the original message alongside the AI's priority/category/reasoning. If
+   triage failed or wasn't run yet, retry it from here.
+5. Click **Generate** to stream a reply draft; **Stop** cancels it mid-stream (both the browser
+   request and the upstream model call). The draft is also freely editable by hand. Mark the
+   ticket reviewed when you're done.
+6. **Import new CSV** replaces the current ticket set entirely - it does not merge with a
    previous import.
 
 ## Project structure
@@ -64,6 +71,13 @@ server/
   src/ai/         Gemini client, prompt/schema, error classification
   src/validation/ input + AI-output validation (zod)
 ```
+
+## Security
+
+Ticket text is treated as untrusted data, never as instructions - including text formatted to
+look like a system note or admin override embedded inside a ticket. This was tested directly (not
+just assumed) against adversarial tickets before and after hardening the prompts; see
+DECISIONS.md's "Security" and test-scenario sections for what we actually found and fixed.
 
 See [CLAUDE.md](./CLAUDE.md) for architecture rules and constraints, and
 [DECISIONS.md](./DECISIONS.md) for the reasoning behind the main choices.
