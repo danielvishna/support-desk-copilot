@@ -1,136 +1,42 @@
 /**
- * @fileoverview Temporary deploy smoke-test screen: confirms
- * client -> server -> Gemini works end to end against a hardcoded sample
- * ticket. Will be replaced by the real import/triage/chat UI.
+ * @fileoverview Top-level view router. Deliberately a plain useState
+ * switch rather than a routing library - three screens don't justify the
+ * extra dependency (see DECISIONS.md).
  */
 
 import { useState } from 'react'
+import { ImportScreen } from './screens/ImportScreen.jsx'
+import { TicketDetailScreen } from './screens/TicketDetailScreen.jsx'
+import { TicketListScreen } from './screens/TicketListScreen.jsx'
+import { ApiKeyProvider } from './state/ApiKeyContext.jsx'
+import { TicketsProvider, useTicketsState } from './state/TicketsContext.jsx'
 
-/** @const {string} */
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+function AppShell() {
+  const { ticketOrder } = useTicketsState()
+  const [selectedTicketId, setSelectedTicketId] = useState(null)
+  const [forceImportView, setForceImportView] = useState(false)
 
-/** @const {{id: string, customer: string, subject: string, message: string}} */
-const SAMPLE_TICKET = {
-  id: 'T-002',
-  customer: 'Alex',
-  subject: 'Cannot log in',
-  message: 'Our entire team cannot access the dashboard, and we have a customer demo in an hour.',
-}
-
-function App() {
-  const [apiKey, setApiKey] = useState('')
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
-  const [result, setResult] = useState(null)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [errorRetryable, setErrorRetryable] = useState(false)
-
-  /**
-   * Sends the sample ticket to POST /api/triage with the entered key and
-   * renders the result, or a classified error from the server.
-   * @param {!SubmitEvent} event
-   * @return {Promise<void>}
-   */
-  async function handleSubmit(event) {
-    event.preventDefault()
-    if (!apiKey.trim()) {
-      setStatus('error')
-      setErrorMessage('Enter your Gemini API key first.')
-      setErrorRetryable(false)
-      return
-    }
-
-    setStatus('loading')
-    setErrorMessage('')
-    setErrorRetryable(false)
-    setResult(null)
-
-    try {
-      const response = await fetch(`${API_URL}/api/triage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-gemini-api-key': apiKey.trim(),
-        },
-        body: JSON.stringify(SAMPLE_TICKET),
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        setStatus('error')
-        setErrorMessage(data.error || `Request failed (${response.status})`)
-        setErrorRetryable(Boolean(data.retryable))
-        return
-      }
-
-      setStatus('success')
-      setResult(data)
-    } catch {
-      setStatus('error')
-      setErrorMessage('Could not reach the server. Is it running and is the API URL correct?')
-      setErrorRetryable(true)
-    }
+  if (selectedTicketId) {
+    return <TicketDetailScreen ticketId={selectedTicketId} onBack={() => setSelectedTicketId(null)} />
   }
 
+  if (ticketOrder.length === 0 || forceImportView) {
+    return <ImportScreen onImported={() => setForceImportView(false)} />
+  }
+
+  return <TicketListScreen onSelectTicket={setSelectedTicketId} onImportNew={() => setForceImportView(true)} />
+}
+
+/**
+ * @return {React.ReactElement}
+ */
+function App() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col gap-6 px-4 py-10">
-      <div>
-        <h1 className="text-xl font-semibold">Support Desk Copilot</h1>
-        <p className="text-sm text-gray-500">Deploy smoke test — client ↔ server ↔ Gemini</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <label htmlFor="apiKey" className="text-sm font-medium">
-          Gemini API key
-        </label>
-        <input
-          id="apiKey"
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Paste your key"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
-          autoComplete="off"
-        />
-
-        <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600">
-          <p className="font-medium text-gray-700">Sample ticket sent:</p>
-          <p>"{SAMPLE_TICKET.message}"</p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {status === 'loading' ? 'Triaging...' : 'Run triage'}
-        </button>
-      </form>
-
-      {status === 'error' && (
-        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          <p>{errorMessage}</p>
-          {errorRetryable && <p className="mt-1 text-xs text-red-600">Safe to try again now.</p>}
-        </div>
-      )}
-
-      {status === 'success' && result && (
-        <div className="rounded border border-green-200 bg-green-50 px-3 py-3 text-sm">
-          <p>
-            <span className="font-medium">Priority:</span> {result.priority}
-          </p>
-          <p>
-            <span className="font-medium">Category:</span> {result.category}
-          </p>
-          <p>
-            <span className="font-medium">Reason:</span> {result.reason}
-          </p>
-        </div>
-      )}
-
-      {status === 'idle' && (
-        <p className="text-sm text-gray-400">Enter your key and run the sample ticket through triage.</p>
-      )}
-    </main>
+    <ApiKeyProvider>
+      <TicketsProvider>
+        <AppShell />
+      </TicketsProvider>
+    </ApiKeyProvider>
   )
 }
 

@@ -4,7 +4,8 @@ An AI assistant that helps support agents triage tickets and draft replies. A su
 uploads a CSV of customer tickets; the app assigns each a priority and category, then helps
 draft a response to a selected ticket.
 
-> Status: project scaffold only. Import, triage, and reply-drafting features are not built yet.
+> Status: CSV import, AI triage, and the ticket list/detail screens work. Reply-draft generation
+> (streaming + Stop) is not built yet - the draft field is manually editable for now.
 
 ## Stack
 
@@ -40,17 +41,28 @@ T-001,Noa,Duplicate charge,"I was charged twice for the same subscription."
 ## Using the app
 
 1. Paste your own Gemini API key into the settings field (sent to the server with each AI
-   request; never stored or logged).
-2. Upload a tickets CSV.
-3. Review each ticket's AI-assigned priority, category, and reasoning.
-4. Open a ticket to see the original message, the source passage behind the AI's analysis, and
-   generate/edit a reply draft.
+   request; never stored or logged - it's also never saved to your browser, so you'll re-enter it
+   after a refresh).
+2. Upload a tickets CSV. Every ticket starts triaging automatically, one at a time.
+3. The ticket list shows each ticket's priority, category, and review status, plus how many of
+   the imported tickets have been reviewed.
+4. Open a ticket to see the original message alongside the AI's priority/category/reasoning, edit
+   a reply draft, and mark it reviewed. If triage failed or wasn't run yet, retry it from here.
+5. **Import new CSV** replaces the current ticket set entirely - it does not merge with a
+   previous import.
 
 ## Project structure
 
 ```
-client/   React + Vite + Tailwind frontend
-server/   Express backend (AI calls, CSV validation)
+client/
+  src/screens/    ImportScreen, TicketListScreen, TicketDetailScreen
+  src/state/      ticketsReducer.js (app state) + ApiKeyContext/TicketsContext
+  src/lib/        CSV parsing, triage API client, auto-triage runner
+  src/components/ small presentational pieces (badges, API key field)
+server/
+  src/routes/     Express route handlers (thin)
+  src/ai/         Gemini client, prompt/schema, error classification
+  src/validation/ input + AI-output validation (zod)
 ```
 
 See [CLAUDE.md](./CLAUDE.md) for architecture rules and constraints, and
