@@ -33,6 +33,12 @@
   decision in the prompt (quote difficulty must never affect priority/category/reason) after
   finding that coupling them together was hurting classification reliability - see "known
   weaknesses" below.
+- **API docs: OpenAPI 3.0 spec (`server/src/openapi.js`) + `swagger-ui-express`** at `/api/docs`,
+  rather than only prose in the README. One added dependency, justified by making the three
+  endpoints' actual request/response shapes (including error shapes and status codes) explorable
+  and testable without reading route source - useful for the follow-up review, and it's what
+  "proper documentation" means for an HTTP API specifically, as distinct from the JSDoc code
+  documentation (see CLAUDE.md's documentation section) which covers the implementation.
 
 ## Security: prompt injection and AI-safety testing
 

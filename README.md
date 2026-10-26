@@ -32,6 +32,14 @@ cp .env.example .env
 npm run dev         # http://localhost:3001
 ```
 
+## API docs
+
+The server exposes an OpenAPI 3.0 spec for its three endpoints, with an interactive Swagger UI:
+- **Docs UI:** `/api/docs` (e.g. http://localhost:3001/api/docs, or the live server's `/api/docs`)
+- **Raw spec:** `/api/openapi.json`
+
+See `server/src/openapi.js`.
+
 ## Supported CSV format
 
 Ticket CSVs must have an `id`, `customer`, `subject`, and `message` column. See
