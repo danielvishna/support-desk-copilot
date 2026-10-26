@@ -1,0 +1,4 @@
+id,customer,subject,message
+T-001,Noa,Duplicate charge,"I was charged twice for the same subscription."
+T-002,Alex,Cannot log in,"Our entire team cannot access the dashboard."
+T-003,Sam,Dark mode,"Please add a dark mode option."
