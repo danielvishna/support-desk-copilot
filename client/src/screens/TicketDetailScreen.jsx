@@ -88,19 +88,25 @@ export function TicketDetailScreen({ ticketId, onBack }) {
       </button>
 
       <div>
-        <h1 className="text-lg font-semibold">{ticket.subject}</h1>
-        <p className="text-xs text-gray-500">{ticket.customer} · {ticket.id}</p>
+        <h1 dir="auto" className="text-lg font-semibold">
+          {ticket.subject}
+        </h1>
+        <p dir="auto" className="text-xs text-gray-500">
+          {ticket.customer} · {ticket.id}
+        </p>
       </div>
 
       <section className="rounded border border-gray-200 bg-gray-50 px-3 py-3">
         <p className="mb-1 text-xs font-medium text-gray-500">Original message</p>
-        <p className="text-sm whitespace-pre-wrap text-gray-800">{ticket.message}</p>
+        <p dir="auto" className="text-sm whitespace-pre-wrap text-gray-800">
+          {ticket.message}
+        </p>
       </section>
 
       <section className="rounded border border-gray-200 px-3 py-3">
         <p className="mb-2 text-xs font-medium text-gray-500">AI analysis</p>
 
-        {ticket.triage.status === 'loading' && <p className="text-sm text-gray-400">Triaging...</p>}
+        {ticket.triage.status === 'loading' && <p className="text-sm text-gray-500">Triaging...</p>}
 
         {ticket.triage.status === 'done' && (
           <div className="flex flex-col gap-2">
@@ -108,7 +114,9 @@ export function TicketDetailScreen({ ticketId, onBack }) {
               <PriorityBadge priority={ticket.triage.priority} />
               <CategoryBadge category={ticket.triage.category} />
             </div>
-            <p className="text-sm text-gray-700">{ticket.triage.reason}</p>
+            <p dir="auto" className="text-sm text-gray-700">
+              {ticket.triage.reason}
+            </p>
           </div>
         )}
 
@@ -128,7 +136,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
 
         {ticket.triage.status === 'pending' && (
           <div className="flex flex-col gap-2">
-            <p className="text-sm text-gray-400">Not triaged yet.</p>
+            <p className="text-sm text-gray-500">Not triaged yet.</p>
             <button
               type="button"
               onClick={runTriage}
@@ -151,7 +159,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
             <button
               type="button"
               onClick={stopGenerating}
-              className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+              className="rounded border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
             >
               Stop
             </button>
@@ -160,7 +168,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
               type="button"
               onClick={generateReply}
               disabled={!apiKey.trim()}
-              className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               {ticket.draft.text ? 'Regenerate' : 'Generate'}
             </button>
@@ -168,6 +176,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
         </div>
         <textarea
           id="draft"
+          dir="auto"
           rows={6}
           value={ticket.draft.text}
           onChange={(e) => dispatch({ type: 'DRAFT_UPDATED', ticketId, text: e.target.value })}
@@ -183,6 +192,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
           type="checkbox"
           checked={ticket.draft.reviewed}
           onChange={(e) => dispatch({ type: 'REVIEW_SET', ticketId, reviewed: e.target.checked })}
+          className="h-4 w-4 rounded border-gray-300 accent-gray-900"
         />
         Mark as reviewed
       </label>

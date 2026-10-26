@@ -4,7 +4,7 @@
  * for. Pure read of TicketsContext - no fetching here (CLAUDE.md).
  */
 
-import { CategoryBadge, PriorityBadge, TriageStatusBadge } from '../components/Badges.jsx'
+import { CategoryBadge, PriorityBadge, ReviewedBadge, TriageStatusBadge } from '../components/Badges.jsx'
 import { selectReviewProgress } from '../state/ticketsReducer.js'
 import { useTicketsState } from '../state/TicketsContext.jsx'
 
@@ -36,7 +36,14 @@ export function TicketListScreen({ onSelectTicket, onImportNew }) {
         </button>
       </div>
 
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+      <div
+        role="progressbar"
+        aria-valuenow={reviewed}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={`${reviewed} of ${total} tickets reviewed`}
+        className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100"
+      >
         <div className="h-full bg-gray-900 transition-[width]" style={{ width: `${progressPct}%` }} />
       </div>
 
@@ -47,7 +54,7 @@ export function TicketListScreen({ onSelectTicket, onImportNew }) {
       )}
 
       {total === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-400">No tickets imported yet.</p>
+        <p className="py-10 text-center text-sm text-gray-500">No tickets imported yet.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {state.ticketOrder.map((id) => {
@@ -60,16 +67,18 @@ export function TicketListScreen({ onSelectTicket, onImportNew }) {
                   className="flex w-full flex-col gap-1.5 rounded border border-gray-200 px-3 py-2.5 text-left hover:border-gray-300 hover:bg-gray-50"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-gray-900">{ticket.subject}</span>
-                    {ticket.draft.reviewed && (
-                      <span className="shrink-0 text-xs font-medium text-green-600">Reviewed</span>
-                    )}
+                    <span dir="auto" className="truncate text-sm font-medium text-gray-900">
+                      {ticket.subject}
+                    </span>
                   </div>
-                  <p className="truncate text-xs text-gray-500">{ticket.customer}</p>
+                  <p dir="auto" className="truncate text-xs text-gray-500">
+                    {ticket.customer}
+                  </p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     <PriorityBadge priority={ticket.triage.priority} />
                     <CategoryBadge category={ticket.triage.category} />
                     <TriageStatusBadge status={ticket.triage.status} />
+                    {ticket.draft.reviewed && <ReviewedBadge />}
                   </div>
                 </button>
               </li>

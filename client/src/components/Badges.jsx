@@ -39,13 +39,24 @@ export function CategoryBadge({ category }) {
  */
 export function TriageStatusBadge({ status }) {
   if (status === 'loading') {
-    return <span className="text-xs font-medium whitespace-nowrap text-gray-400">Triaging...</span>
+    return <span className="text-xs font-medium whitespace-nowrap text-gray-500">Triaging...</span>
   }
   if (status === 'error') {
     return <span className="text-xs font-medium whitespace-nowrap text-red-600">Triage failed</span>
   }
   if (status === 'pending') {
-    return <span className="text-xs font-medium whitespace-nowrap text-gray-400">Pending</span>
+    return <span className="text-xs font-medium whitespace-nowrap text-gray-500">Pending</span>
   }
   return null
+}
+
+/**
+ * @return {React.ReactElement}
+ */
+export function ReviewedBadge() {
+  return (
+    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-green-700">
+      Reviewed
+    </span>
+  )
 }
