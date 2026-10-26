@@ -10,7 +10,7 @@ import { classifyGeminiError } from '../ai/geminiError.js'
 import { callGeminiJson } from '../ai/geminiClient.js'
 import { buildTriagePrompt, TRIAGE_RESPONSE_SCHEMA } from '../ai/triagePrompt.js'
 import { parseTicket } from '../validation/ticketSchema.js'
-import { parseTriageResult } from '../validation/triageResultSchema.js'
+import { isQuoteGrounded, parseTriageResult } from '../validation/triageResultSchema.js'
 
 const router = Router()
 
@@ -34,7 +34,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
  * Request body: `{id, customer, subject, message}` (see
  * validation/ticketSchema.js). Caller's Gemini key goes in the
  * `x-gemini-api-key` header.
- * Success (200): `{ticketId, priority, category, reason}`.
+ * Success (200): `{ticketId, priority, category, reason, quote}`. `quote` is "" when the model
+ * didn't provide one, or when it provided one that doesn't actually appear in the ticket's
+ * message verbatim (never trust a quote we can't verify - see isQuoteGrounded).
  * Failure (400/401/502): `{error, ticketId?, needsReview?, retryable?}`.
  */
 router.post('/', async (req, res) => {
@@ -103,7 +105,8 @@ router.post('/', async (req, res) => {
     })
   }
 
-  res.json({ ticketId: ticketResult.data.id, ...result.data })
+  const quote = isQuoteGrounded(result.data.quote, ticketResult.data.message) ? result.data.quote : ''
+  res.json({ ticketId: ticketResult.data.id, ...result.data, quote })
 })
 
 export default router

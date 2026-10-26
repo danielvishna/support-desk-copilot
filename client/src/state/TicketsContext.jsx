@@ -1,8 +1,8 @@
 /**
  * @fileoverview React Context wiring for ticketsReducer.js. Kept separate
- * from the reducer itself so the state logic stays framework-agnostic and
- * from UI components so components never dispatch raw action objects
- * inline (see useTickets()).
+ * from the reducer itself so the state logic stays framework-agnostic, and
+ * split into two contexts (state vs dispatch) so a component that only
+ * dispatches actions doesn't re-render on every state change.
  */
 
 import { createContext, useContext, useReducer } from 'react'

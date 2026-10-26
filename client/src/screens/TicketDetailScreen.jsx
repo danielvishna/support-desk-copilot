@@ -6,6 +6,7 @@
 
 import { useRef } from 'react'
 import { PriorityBadge, CategoryBadge } from '../components/Badges.jsx'
+import { HighlightedMessage } from '../components/HighlightedMessage.jsx'
 import { streamReplyDraft } from '../lib/draftReplyApi.js'
 import { triageTicket } from '../lib/triageApi.js'
 import { useApiKey } from '../state/ApiKeyContext.jsx'
@@ -42,7 +43,14 @@ export function TicketDetailScreen({ ticketId, onBack }) {
     dispatch({ type: 'TRIAGE_STARTED', ticketId })
     const result = await triageTicket(ticket, apiKey.trim())
     if (result.success) {
-      dispatch({ type: 'TRIAGE_SUCCEEDED', ticketId, priority: result.priority, category: result.category, reason: result.reason })
+      dispatch({
+        type: 'TRIAGE_SUCCEEDED',
+        ticketId,
+        priority: result.priority,
+        category: result.category,
+        reason: result.reason,
+        quote: result.quote,
+      })
     } else {
       dispatch({ type: 'TRIAGE_FAILED', ticketId, error: result.error, retryable: result.retryable })
     }
@@ -98,9 +106,7 @@ export function TicketDetailScreen({ ticketId, onBack }) {
 
       <section className="rounded border border-gray-200 bg-gray-50 px-3 py-3">
         <p className="mb-1 text-xs font-medium text-gray-500">Original message</p>
-        <p dir="auto" className="text-sm whitespace-pre-wrap text-gray-800">
-          {ticket.message}
-        </p>
+        <HighlightedMessage message={ticket.message} quote={ticket.triage.quote} />
       </section>
 
       <section className="rounded border border-gray-200 px-3 py-3">
@@ -117,6 +123,11 @@ export function TicketDetailScreen({ ticketId, onBack }) {
             <p dir="auto" className="text-sm text-gray-700">
               {ticket.triage.reason}
             </p>
+            {ticket.triage.quote && (
+              <p className="text-xs text-gray-500">
+                Based on the <mark className="rounded bg-amber-200 px-0.5 text-gray-900">highlighted</mark> text above.
+              </p>
+            )}
           </div>
         )}
 

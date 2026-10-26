@@ -14,7 +14,9 @@
  * @property {string} message
  * @property {{status: 'pending'|'loading'|'done'|'error', priority:
  *     (string|null), category: (string|null), reason: (string|null),
- *     error: (string|null), retryable: boolean}} triage
+ *     quote: string, error: (string|null), retryable: boolean}} triage
+ *     `quote` is "" unless the server verified it's an exact substring of
+ *     this ticket's message - see server/src/validation/triageResultSchema.js.
  * @property {{text: string, streaming: boolean, reviewed: boolean,
  *     error: (string|null)}} draft
  */
@@ -42,7 +44,7 @@ export const initialState = {
 function toTicket(row) {
   return {
     ...row,
-    triage: { status: 'pending', priority: null, category: null, reason: null, error: null, retryable: false },
+    triage: { status: 'pending', priority: null, category: null, reason: null, quote: '', error: null, retryable: false },
     draft: { text: '', streaming: false, reviewed: false, error: null },
   }
 }
@@ -88,6 +90,7 @@ export function ticketsReducer(state, action) {
           priority: action.priority,
           category: action.category,
           reason: action.reason,
+          quote: action.quote ?? '',
           error: null,
           retryable: false,
         },

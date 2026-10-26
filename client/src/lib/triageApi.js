@@ -13,6 +13,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
  * @property {string=} priority
  * @property {string=} category
  * @property {string=} reason
+ * @property {string=} quote Exact substring of the ticket message that
+ *     justifies the priority, or "" if none/unverifiable (see the server's
+ *     isQuoteGrounded).
  * @property {string=} error User-facing message (only when !success).
  * @property {boolean=} retryable
  */
@@ -35,7 +38,7 @@ export async function triageTicket(ticket, apiKey) {
     if (!response.ok) {
       return { success: false, error: data.error ?? `Request failed (${response.status})`, retryable: Boolean(data.retryable) }
     }
-    return { success: true, priority: data.priority, category: data.category, reason: data.reason }
+    return { success: true, priority: data.priority, category: data.category, reason: data.reason, quote: data.quote }
   } catch {
     return {
       success: false,

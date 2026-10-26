@@ -12,13 +12,14 @@ export const triageResultSchema = z.object({
   priority: z.enum(['High', 'Medium', 'Low']),
   category: z.enum(['Billing', 'Technical', 'Feature Request', 'Other']),
   reason: z.string().min(1).max(500),
+  quote: z.string().max(500),
 })
 
 /**
  * @param {string} rawText The raw text Gemini returned (expected to be
  *     JSON, but never assumed to be).
  * @return {{success: true, data: {priority: string, category: string,
- *     reason: string}}|{success: false, error: string}}
+ *     reason: string, quote: string}}|{success: false, error: string}}
  */
 export function parseTriageResult(rawText) {
   let parsed
@@ -34,4 +35,16 @@ export function parseTriageResult(rawText) {
   }
 
   return { success: true, data: result.data }
+}
+
+/**
+ * The model is asked to copy `quote` verbatim from the ticket message, but
+ * it's still a model output - never trust it without checking. Used to
+ * decide whether the UI can safely highlight it in the original message.
+ * @param {string} quote
+ * @param {string} message
+ * @return {boolean}
+ */
+export function isQuoteGrounded(quote, message) {
+  return quote.trim().length > 0 && message.includes(quote)
 }

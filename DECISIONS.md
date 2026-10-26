@@ -24,6 +24,15 @@
   need for multiple named event types.
 - **View routing: a plain `useState` switch in `App.jsx`, not a routing library.** Three screens
   (import/list/detail) don't justify the dependency.
+- **Triage returns a `quote`** - a short substring of the ticket message that the model says
+  justifies its priority - which the UI highlights inline in the original message. Low-effort,
+  high-value: it's visible, checkable proof the classification is grounded in the actual text, not
+  asserted. The server never trusts the quote as given - `isQuoteGrounded()` verifies it's an exact
+  substring of the real message before the UI is allowed to highlight it; a quote that doesn't
+  check out is silently dropped (empty string), not shown. Also decoupled it from the main
+  decision in the prompt (quote difficulty must never affect priority/category/reason) after
+  finding that coupling them together was hurting classification reliability - see "known
+  weaknesses" below.
 
 ## Security: prompt injection and AI-safety testing
 
@@ -84,6 +93,13 @@ See the test table below for the full before/after results.
   constrained; the free-text reply endpoint has a larger attack surface by nature.
 - No automated test suite - all verification here was manual/scripted against the running server
   (see below), not committed as repeatable unit/integration tests.
+- Occasional genuine model-output variance on the triage task: the same ticket, same prompt, can
+  get a noticeably worse classification on an unlucky sampling run (not every time - roughly
+  intermittent). We mitigated the specific worst case we found (see the quote-field investigation
+  below) by decoupling the quote from the main decision, but this is sampling variance in the
+  model itself, not something our code fully controls. A lower `temperature` was tried as a fix and
+  made things *worse* in testing (locked onto a consistently wrong answer instead of an
+  intermittently wrong one) - left at the default rather than "fixed" with an unproven knob.
 
 ## What I would improve with four more hours
 
@@ -111,3 +127,4 @@ the real triage/draft-reply endpoints - not just eyeballed in the UI.
 | 8 | Ticket with RTL-override, zero-width, and control characters in the text | No crash, no visual spoofing in the UI | **Pass after a fix.** AI handled the content fine from the start (classified correctly, grounded reply). The RTL-override character did visually reorder text in our own ticket list before we added `sanitizeText()` - fixed by stripping bidi-control/zero-width characters client- and server-side. |
 | 9 | Invalid CSV (missing a required column) | Clear validation error, no crash | **Pass.** Import screen shows "Missing required column(s): subject." and nothing is imported. |
 | 10 | Stopping a reply mid-stream | Stream cancels cleanly, draft preserved if one already existed | **Pass after a fix.** Found that `req.on('close')` fired immediately (as soon as the body was read), not on real client disconnect, which aborted every request - fixed by listening on `res.on('close')` instead. Also found that clicking Stop right after Regenerate wiped an existing draft before any new text arrived - fixed by keeping the old draft until the first new chunk lands. |
+| 11 | Repeated Hebrew billing ticket, 5+ runs, checking the new `quote` field | Consistent `Medium`/`Billing` with a real, verbatim Hebrew quote | **Investigated a scary-looking failure, found it was our test tooling, not the app.** Testing via `curl -d '<hebrew text>'` through Windows/git-bash intermittently mangled the Hebrew into mojibake before it reached the server (one response literally said the message was "composed entirely of question marks" - the giveaway). Re-tested with the exact same ticket sent as a proper UTF-8 file (`curl --data-binary @file.json`) and got correct, grounded Hebrew results 5/5. The lesson, not just the fix: a "the AI can't handle X" finding is worth reproducing through a second, independent path (direct SDK call, a file instead of a shell argument, the actual browser) before trusting it - the actual app (browser `fetch`, CSV import) was never affected, since those paths handle UTF-8 correctly by construction. |

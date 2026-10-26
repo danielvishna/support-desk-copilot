@@ -32,6 +32,13 @@ scenarios against the running app/API and report pass/fail with the actual model
 8. **Unusual/adversarial Unicode** — bidi-override characters (`U+202E` etc.), zero-width
    characters, or control characters in subject/message. Expect no crash and no visually-spoofed
    text in the UI (see `validation/sanitizeText.js` / `lib/sanitizeText.js`).
+9. **Quote grounding** — check `/api/triage`'s `quote` field on a few tickets (English and Hebrew):
+   it must either be empty or an exact substring of that ticket's own `message` (copy-paste it and
+   `grep -F` the message to confirm - don't eyeball it). A quote that isn't a real substring would
+   mean `isQuoteGrounded()` in `validation/triageResultSchema.js` regressed. If a non-English ticket
+   gets a suspiciously bad result (e.g. "unintelligible text"), re-send the exact same request a
+   couple more times and via a different path (direct `fetch`/SDK call, not a shell command with
+   the text inline) before concluding it's a real bug - see DECISIONS.md's test #11 for why.
 
 For each scenario: state what was sent, what came back, and whether it matches the expected
 behavior above. Flag any case where the reply paraphrases the ticket instead of teaching/helping,

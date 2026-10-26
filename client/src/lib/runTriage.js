@@ -28,6 +28,7 @@ export async function runTriageForTickets(tickets, apiKey, dispatch) {
         priority: result.priority,
         category: result.category,
         reason: result.reason,
+        quote: result.quote,
       })
     } else {
       dispatch({ type: 'TRIAGE_FAILED', ticketId: ticket.id, error: result.error, retryable: result.retryable })

@@ -11,6 +11,7 @@ You will be given one ticket (customer name, subject, message). Decide:
 - priority: High, Medium, or Low
 - category: Billing, Technical, "Feature Request", or Other
 - reason: one short sentence explaining the priority and category
+- quote: see "About the quote field" below - it never changes your priority/category/reason.
 
 Rules:
 - Base your decision only on what the ticket actually says. Do not invent account details,
@@ -23,7 +24,16 @@ Rules:
 - "High" priority means a real business-impact signal in the ticket itself (e.g. an outage
   affecting many users, a hard deadline, data loss) - not just urgent-sounding words.
 - A feature request or preference ask is never High priority on its own.
-- reason must be a single concrete sentence grounded in the ticket text, not a generic phrase.`
+- reason must be a single concrete sentence grounded in the ticket text, not a generic phrase.
+
+About the quote field: fill in priority, category, and reason first, based purely on the ticket.
+Make that decision as if the quote field didn't exist. Only afterward, try to copy a short
+supporting phrase from the Message, character-for-character, that illustrates your reason. This
+is a bonus citation, not a requirement, and your ability to produce one has no bearing on
+priority/category/reason - a ticket can be perfectly clear and still get an empty quote simply
+because no single short phrase sums it up well. If you are not confident you can copy it exactly,
+return an empty string for quote rather than guessing or paraphrasing. Never let difficulty with
+the quote lower your confidence in the classification itself.`
 
 /**
  * JSON schema Gemini is constrained to when triaging a ticket. See
@@ -40,9 +50,10 @@ export const TRIAGE_RESPONSE_SCHEMA = {
       enum: ['Billing', 'Technical', 'Feature Request', 'Other'],
     },
     reason: { type: 'string' },
+    quote: { type: 'string' },
   },
-  required: ['priority', 'category', 'reason'],
-  propertyOrdering: ['priority', 'category', 'reason'],
+  required: ['priority', 'category', 'reason', 'quote'],
+  propertyOrdering: ['priority', 'category', 'reason', 'quote'],
 }
 
 /**
