@@ -15,7 +15,8 @@
  * @property {{status: 'pending'|'loading'|'done'|'error', priority:
  *     (string|null), category: (string|null), reason: (string|null),
  *     error: (string|null), retryable: boolean}} triage
- * @property {{text: string, streaming: boolean, reviewed: boolean}} draft
+ * @property {{text: string, streaming: boolean, reviewed: boolean,
+ *     error: (string|null)}} draft
  */
 
 /**
@@ -42,7 +43,7 @@ function toTicket(row) {
   return {
     ...row,
     triage: { status: 'pending', priority: null, category: null, reason: null, error: null, retryable: false },
-    draft: { text: '', streaming: false, reviewed: false },
+    draft: { text: '', streaming: false, reviewed: false, error: null },
   }
 }
 
@@ -109,10 +110,25 @@ export function ticketsReducer(state, action) {
         draft: { ...t.draft, text: action.text },
       }))
 
+    // Appends a streamed chunk via the reducer (not the caller reading
+    // ticket.draft.text itself) so concurrent dispatches can't race on a
+    // stale closure value.
+    case 'DRAFT_APPENDED':
+      return withTicket(state, action.ticketId, (t) => ({
+        ...t,
+        draft: { ...t.draft, text: t.draft.text + action.chunk },
+      }))
+
     case 'DRAFT_STREAMING_SET':
       return withTicket(state, action.ticketId, (t) => ({
         ...t,
-        draft: { ...t.draft, streaming: action.streaming },
+        draft: { ...t.draft, streaming: action.streaming, error: action.streaming ? null : t.draft.error },
+      }))
+
+    case 'DRAFT_ERROR_SET':
+      return withTicket(state, action.ticketId, (t) => ({
+        ...t,
+        draft: { ...t.draft, error: action.error },
       }))
 
     case 'REVIEW_SET':

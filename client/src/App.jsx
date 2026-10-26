@@ -17,7 +17,7 @@ function AppShell() {
   const [forceImportView, setForceImportView] = useState(false)
 
   if (selectedTicketId) {
-    return <TicketDetailScreen ticketId={selectedTicketId} onBack={() => setSelectedTicketId(null)} />
+    return <TicketDetailScreen key={selectedTicketId} ticketId={selectedTicketId} onBack={() => setSelectedTicketId(null)} />
   }
 
   if (ticketOrder.length === 0 || forceImportView) {

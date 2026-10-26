@@ -8,6 +8,7 @@
 import cors from 'cors'
 import 'dotenv/config'
 import express from 'express'
+import draftReplyRouter from './routes/draftReply.js'
 import triageRouter from './routes/triage.js'
 
 const app = express()
@@ -21,6 +22,7 @@ app.get('/health', (req, res) => {
 })
 
 app.use('/api/triage', triageRouter)
+app.use('/api/draft-reply', draftReplyRouter)
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`)

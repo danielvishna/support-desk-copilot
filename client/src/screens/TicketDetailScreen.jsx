@@ -1,11 +1,12 @@
 /**
  * @fileoverview Ticket detail: original message alongside the AI triage
- * analysis, plus an editable reply draft and the reviewed toggle. Reply
- * generation (streaming + Stop) isn't built yet - the draft is manually
- * editable for now; see DECISIONS.md.
+ * analysis, an editable reply draft with streaming generate + Stop, and
+ * the reviewed toggle.
  */
 
+import { useRef } from 'react'
 import { PriorityBadge, CategoryBadge } from '../components/Badges.jsx'
+import { streamReplyDraft } from '../lib/draftReplyApi.js'
 import { triageTicket } from '../lib/triageApi.js'
 import { useApiKey } from '../state/ApiKeyContext.jsx'
 import { useTicketsDispatch, useTicketsState } from '../state/TicketsContext.jsx'
@@ -19,6 +20,10 @@ export function TicketDetailScreen({ ticketId, onBack }) {
   const dispatch = useTicketsDispatch()
   const { apiKey } = useApiKey()
   const ticket = state.tickets[ticketId]
+  // One in-flight stream's AbortController at a time, scoped to this
+  // mounted screen instance (keyed implicitly by React remounting this
+  // component when ticketId/key changes - see TicketListScreen's usage).
+  const abortControllerRef = useRef(null)
 
   if (!ticket) {
     return (
@@ -41,6 +46,30 @@ export function TicketDetailScreen({ ticketId, onBack }) {
     } else {
       dispatch({ type: 'TRIAGE_FAILED', ticketId, error: result.error, retryable: result.retryable })
     }
+  }
+
+  /** @return {Promise<void>} */
+  async function generateReply() {
+    if (!apiKey.trim()) return
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    dispatch({ type: 'DRAFT_UPDATED', ticketId, text: '' })
+    dispatch({ type: 'DRAFT_STREAMING_SET', ticketId, streaming: true })
+
+    const result = await streamReplyDraft(ticket, ticket.triage, apiKey.trim(), {
+      signal: controller.signal,
+      onChunk: (chunk) => dispatch({ type: 'DRAFT_APPENDED', ticketId, chunk }),
+    })
+
+    dispatch({ type: 'DRAFT_STREAMING_SET', ticketId, streaming: false })
+    if (!result.success && !result.aborted) {
+      dispatch({ type: 'DRAFT_ERROR_SET', ticketId, error: result.error })
+    }
+  }
+
+  function stopGenerating() {
+    abortControllerRef.current?.abort()
   }
 
   return (
@@ -105,18 +134,39 @@ export function TicketDetailScreen({ ticketId, onBack }) {
       </section>
 
       <section className="flex flex-col gap-2">
-        <label htmlFor="draft" className="text-xs font-medium text-gray-500">
-          Reply draft
-        </label>
+        <div className="flex items-center justify-between gap-2">
+          <label htmlFor="draft" className="text-xs font-medium text-gray-500">
+            Reply draft
+          </label>
+          {ticket.draft.streaming ? (
+            <button
+              type="button"
+              onClick={stopGenerating}
+              className="rounded border border-red-300 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+            >
+              Stop
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={generateReply}
+              disabled={!apiKey.trim()}
+              className="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {ticket.draft.text ? 'Regenerate' : 'Generate'}
+            </button>
+          )}
+        </div>
         <textarea
           id="draft"
           rows={6}
           value={ticket.draft.text}
           onChange={(e) => dispatch({ type: 'DRAFT_UPDATED', ticketId, text: e.target.value })}
-          placeholder="Write or generate a reply..."
+          placeholder="Write a reply, or click Generate..."
           className="rounded border border-gray-300 px-3 py-2 text-sm"
         />
-        <p className="text-xs text-gray-400">AI-assisted reply generation is coming next - draft is manual for now.</p>
+        {ticket.draft.error && <p className="text-xs text-red-600">{ticket.draft.error}</p>}
+        {!apiKey.trim() && <p className="text-xs text-amber-600">Enter an API key to generate a reply.</p>}
       </section>
 
       <label className="flex w-fit items-center gap-2 text-sm text-gray-700">

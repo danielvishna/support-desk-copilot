@@ -17,6 +17,12 @@ const MODEL = 'gemini-3.1-flash-lite'
 const REQUEST_TIMEOUT_MS = 20_000
 
 /**
+ * Reply drafts take longer to generate than a triage classification.
+ * @const {number}
+ */
+const STREAM_TIMEOUT_MS = 60_000
+
+/**
  * Calls Gemini and asks it to return JSON matching `responseSchema`.
  * @param {Object} args
  * @param {string} args.apiKey Caller-supplied Gemini API key.
@@ -47,4 +53,35 @@ export async function callGeminiJson({ apiKey, systemInstruction, contents, resp
   })
 
   return response.text
+}
+
+/**
+ * Streams free-form text from Gemini (no JSON schema - used for reply
+ * drafts, not triage). Yields text as it arrives so the caller can forward
+ * chunks to an HTTP response as they come in.
+ * @param {Object} args
+ * @param {string} args.apiKey
+ * @param {string} args.systemInstruction
+ * @param {!Array<Object>} args.contents
+ * @param {AbortSignal=} args.callerSignal Aborted when the client cancels
+ *     (Stop button / disconnect) - combined with our own safety timeout so
+ *     either one can end the upstream request.
+ * @return {AsyncGenerator<string>}
+ * @throws {Error} If the request fails or is aborted; route this through
+ *     ai/geminiError.js before showing it to the user.
+ */
+export async function* streamGeminiText({ apiKey, systemInstruction, contents, callerSignal }) {
+  const ai = new GoogleGenAI({ apiKey })
+  const timeoutSignal = AbortSignal.timeout(STREAM_TIMEOUT_MS)
+  const abortSignal = callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal
+
+  const stream = await ai.models.generateContentStream({
+    model: MODEL,
+    contents,
+    config: { systemInstruction, abortSignal },
+  })
+
+  for await (const chunk of stream) {
+    if (chunk.text) yield chunk.text
+  }
 }
