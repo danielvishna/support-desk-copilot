@@ -7,6 +7,7 @@
  */
 
 import Papa from 'papaparse'
+import { sanitizeText } from './sanitizeText.js'
 
 /** Required columns, in no particular order. @const {!Array<string>} */
 const REQUIRED_COLUMNS = ['id', 'customer', 'subject', 'message']
@@ -78,10 +79,10 @@ function validate(results) {
 
   sourceRows.forEach((raw, index) => {
     const rowNumber = index + 2 // +1 for header, +1 for 1-based rows
-    const id = (raw.id ?? '').trim()
-    const customer = (raw.customer ?? '').trim()
-    const subject = (raw.subject ?? '').trim()
-    const message = (raw.message ?? '').trim()
+    const id = sanitizeText((raw.id ?? '').trim())
+    const customer = sanitizeText((raw.customer ?? '').trim())
+    const subject = sanitizeText((raw.subject ?? '').trim())
+    const message = sanitizeText((raw.message ?? '').trim())
 
     if (!id || !customer || !subject || !message) {
       errors.push(`Row ${rowNumber}: missing a required field (id, customer, subject, or message).`)
